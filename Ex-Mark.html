@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>EX-Mark Markdown Generator</title>
+  <title>Ex-Mark Markdown Generator</title>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -74,14 +74,163 @@
 </head>
 <body>
 
-<h1>🧰 EX-Mark: Universal Markdown Generator</h1>
-<p style="text-align:center;max-width:800px;margin:0 auto 2em;">Use EX-Mark to create structured markdown for resumes, project READMEs, documentation, and more. Fully customizable fields, shield.io badges, and export tools included.</p>
+<h1>📝 Markdown Resume Generator</h1>
 
-<!-- You can embed the resume generator form here or load it as a module -->
-<!-- Add dynamic field management or configuration toggles if needed -->
+<form id="markdownForm">
+  <label for="name">👤 Name</label>
+  <input type="text" id="name" placeholder="John Doe" />
 
-<!-- Placeholder for dynamic tool in future -->
-<pre id="output">Start customizing your markdown content using EX-Mark!</pre>
+  <label for="alias">🧛 Alias</label>
+  <input type="text" id="alias" placeholder="JD" />
+
+  <label for="summary">🧠 Summary</label>
+  <textarea id="summary" rows="4" placeholder="A brief summary about yourself..."></textarea>
+
+  <label>🧵 Skills</label>
+  <div id="skillTags">
+    <input type="text" placeholder="Enter custom skill..." id="customSkill" />
+    <button type="button" onclick="addSkill()">➕ Add Skill</button>
+    <div id="skillsDisplay"></div>
+  </div>
+
+  <label>🎮 Projects</label>
+  <div id="projectsContainer">
+    <div class="project-entry">
+      <input type="text" placeholder="Project Title" class="project-title" />
+      <input type="text" placeholder="Project Description" class="project-desc" />
+      <input type="text" placeholder="Project Link (optional)" class="project-link" />
+    </div>
+  </div>
+  <button type="button" onclick="addProject()">➕ Add Project</button>
+
+  <label for="contact">📬 Contact Links</label>
+  <textarea id="contact" rows="4" placeholder="GitHub, LinkedIn, etc."></textarea>
+
+  <div class="optional-section">
+    <label for="certifications">📜 Certifications (optional)</label>
+    <textarea id="certifications" rows="3" placeholder="- Certification Name"></textarea>
+  </div>
+
+  <div class="optional-section">
+    <label for="education">🎓 Education (optional)</label>
+    <textarea id="education" rows="3" placeholder="- Degree, Institution, Year"></textarea>
+  </div>
+
+  <div class="buttons">
+    <button type="button" onclick="copyAndGenerate()">📋 Generate & Copy</button>
+    <button type="button" onclick="downloadMarkdown()">💾 Download .md</button>
+  </div>
+</form>
+
+<pre id="output"></pre>
+
+<script>
+  const skillList = [];
+
+  function addSkill() {
+    const input = document.getElementById('customSkill');
+    const value = input.value.trim();
+    if (value && !skillList.includes(value)) {
+      skillList.push(value);
+      const badge = `![${value}](https://img.shields.io/badge/${value.replace(/ /g, '_')}-blue?style=for-the-badge)`;
+      const span = document.createElement('span');
+      span.innerHTML = badge;
+      span.style.marginRight = '10px';
+      document.getElementById('skillsDisplay').appendChild(span);
+      input.value = '';
+    }
+  }
+
+  function addProject() {
+    const container = document.getElementById('projectsContainer');
+    const div = document.createElement('div');
+    div.className = 'project-entry';
+    div.innerHTML = `
+      <input type="text" placeholder="Project Title" class="project-title" />
+      <input type="text" placeholder="Project Description" class="project-desc" />
+      <input type="text" placeholder="Project Link (optional)" class="project-link" />
+    `;
+    container.appendChild(div);
+  }
+
+  function generateMarkdown() {
+    const name = document.getElementById('name').value || 'John Doe';
+    const alias = document.getElementById('alias').value || 'JD';
+    const summary = document.getElementById('summary').value || 'Professional summary here...';
+    const contact = document.getElementById('contact').value;
+    const certifications = document.getElementById('certifications').value;
+    const education = document.getElementById('education').value;
+
+    let toc = `## 📑 Table of Contents\n`;
+    toc += `- [🧠 Summary](#-summary)\n`;
+    toc += `- [🧵 Skills](#-skills)\n`;
+    toc += `- [🎮 Projects](#-projects)\n`;
+    toc += `- [📬 Contact & Links](#-contact--links)`;
+    if (certifications.trim()) toc += `\n- [📜 Certifications](#-certifications)`;
+    if (education.trim()) toc += `\n- [🎓 Education](#-education)`;
+
+    let skills = skillList.map(skill => `![${skill}](https://img.shields.io/badge/${skill.replace(/ /g, '_')}-blue?style=for-the-badge)`).join(' ');
+
+    let projectsMarkdown = '';
+    document.querySelectorAll('.project-entry').forEach(entry => {
+      const title = entry.querySelector('.project-title').value;
+      const desc = entry.querySelector('.project-desc').value;
+      const link = entry.querySelector('.project-link').value;
+      if (title || desc || link) {
+        projectsMarkdown += `- **${title || 'Untitled'}**: ${desc || 'No description provided.'}`;
+        if (link) projectsMarkdown += ` [🔗 Link](${link})`;
+        projectsMarkdown += '\n';
+      }
+    });
+
+    let contactMarkdown = contact
+      .split('\n')
+      .filter(Boolean)
+      .map(link => {
+        const parts = link.split(',');
+        return parts[1] ? `- [${parts[0].trim()}](${parts[1].trim()})` : `- ${link.trim()}`;
+      }).join('\n');
+
+    let markdown = `# **${name} (${alias})**\n\n---\n\n${toc}\n\n---\n\n## 🧠 Summary\n\n${summary}\n\n## 🧵 Skills\n\n${skills}\n\n## 🎮 Projects\n\n${projectsMarkdown}\n\n## 📬 Contact & Links\n\n${contactMarkdown}`;
+
+    if (certifications.trim()) {
+      markdown += `\n\n## 📜 Certifications\n\n${certifications}`;
+    }
+    if (education.trim()) {
+      markdown += `\n\n## 🎓 Education\n\n${education}`;
+    }
+
+    document.getElementById('output').textContent = markdown;
+    return markdown;
+  }
+
+  function copyAndGenerate() {
+    const markdown = generateMarkdown();
+    navigator.clipboard.writeText(markdown).then(() => {
+      alert('Markdown generated and copied to clipboard!');
+    });
+  }
+
+  function downloadMarkdown() {
+    const markdown = generateMarkdown();
+    const filename = prompt("Enter filename (without extension):", "resume") || "resume";
+    const blob = new Blob([markdown], { type: "text/markdown" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `${filename}.md`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+</script>
+
+<div id="welcomeModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9999;">
+  <div style="background:white;padding:2em;border-radius:10px;max-width:500px;text-align:center;box-shadow:0 4px 15px rgba(0,0,0,0.3);">
+    <h2>👋 Welcome!</h2>
+    <p>This application was designed and created by <strong>Risk</strong> to help you generate professional GitHub-friendly resumes effortlessly—no Markdown knowledge needed.</p>
+    <button onclick="document.getElementById('welcomeModal').style.display='none'" style="margin-top:1em;padding:0.5em 1.5em;border:none;border-radius:6px;background:#007bff;color:white;font-weight:bold;cursor:pointer;">Got it!</button>
+  </div>
+</div>
 
 </body>
 </html>
